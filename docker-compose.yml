@@ -1,0 +1,60 @@
+version: "3.0"
+
+services:
+
+  gateway:
+    build:
+      context: .
+    image: moleculer-test
+    env_file: docker-compose.env
+    environment:
+      SERVICES: gateway
+      PORT: 3000
+    links:
+      - nats
+    depends_on:
+      - nats
+    labels:
+      - "traefik.enable=true"   
+      - "traefik.backend=gateway"
+      - "traefik.port=3000"
+      - "traefik.frontend.entryPoints=http"
+      - "traefik.frontend.rule=PathPrefix:/"
+
+  cars:
+    build:
+      context: .
+    image: moleculer-test
+    env_file: docker-compose.env
+    environment:
+      SERVICES: cars
+    links:
+      - nats
+    depends_on:
+      - nats
+      
+  exchanger:
+    build:
+      context: .
+    image: moleculer-test
+    env_file: docker-compose.env
+    environment:
+      SERVICES: exchanger
+    links:
+      - nats
+    depends_on:
+      - nats
+
+
+  nats:
+    image: nats
+
+  traefik:
+    image: traefik
+    command: --web --docker --docker.domain=docker.localhost --logLevel=INFO --docker.exposedbydefault=false
+    ports:
+      - "3000:80"
+      - "3001:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/null:/traefik.toml
